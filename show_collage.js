@@ -128,7 +128,6 @@ function embedImages(svg) {
           var a = new FileReader();
           a.onload = function(e) {
             image.href.baseVal = e.target.result;
-            console.log("Resolved");
             resolve();
           };
           a.readAsDataURL(b);
@@ -161,16 +160,6 @@ function downloadPng(svg, width, height) {
     a.click();
     document.body.removeChild(a);
   }.bind(this);
-  let base_meta = document.querySelector("html > head > base");
-  if (base_meta === null) {
-    let head = document.querySelector("html > head");
-    let base = document.createElement("base");
-    head.appendChild(base);
-    base_meta = base;
-  }
-  base_meta.href = "http://127.0.0.1:8000/";
-
-  console.log(xml);
   image.src = url;
 }
 
