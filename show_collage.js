@@ -31,6 +31,14 @@ function addShadows(svg) {
   });
 }
 
+function transformToMatrix(elem) {
+  // TODO: Fix this broken shit
+  try {
+    return new DOMMatrix(elem.getAttribute("transform"));
+  } catch (error) {console.warn(error);}
+  return DOMMatrix.fromMatrix(elem.getCTM());
+}
+
 function getBaseVal(from) {
   let baseVal = from.baseVal;
   if (baseVal !== undefined) {
@@ -59,26 +67,30 @@ function applyPostitFrames(svg, thickness) {
   let min_y = null;
   let max_y = null;
   postits.forEach(postit => {
-    for (row in postit.children) {
-      let child = postit.children.item(row);
-      width = Math.max(width, child.getComputedTextLength());
-      let child_y = getBaseVal(child.y);
-      if (min_y === null || child_y < min_y) {
-        min_y = child_y;
+    try {
+      for (row in postit.children) {
+        let child = postit.children.item(row);
+        width = Math.max(width, child.getComputedTextLength());
+        let child_y = getBaseVal(child.y);
+        if (min_y === null || child_y < min_y) {
+          min_y = child_y;
+        }
+        if (max_y === null || child_y > max_y) {
+          max_y = child_y;
+        }
       }
-      if (max_y === null || child_y > max_y) {
-        max_y = child_y;
-      }
-    }
-    let row_height = (max_y - min_y) / postit.children.length;
-    let height = row_height * (postit.children.length + 1);
-    let text_y = getBaseVal(postit.y) - row_height;
-    let border = createFrame(postit.id + "_frame", postit.x, text_y, width, height, thickness, color = postit.style.stroke);
-    postit.style.stroke = "";
-    let text_transform = new DOMMatrix(postit.getAttribute("transform"));
-    border.setAttribute("transform", text_transform);
+      let row_height = (max_y - min_y) / postit.children.length;
+      let height = row_height * (postit.children.length + 1);
+      let text_y = getBaseVal(postit.y) - row_height;
+      let border = createFrame(postit.id + "_frame", postit.x, text_y, width, height, thickness, color = postit.style.stroke);
+      postit.style.stroke = "";
+      let text_transform = transformToMatrix(postit);
+      border.setAttribute("transform", text_transform);
 
-    postit.parentNode.insertBefore(border, postit);
+      postit.parentNode.insertBefore(border, postit);
+    } catch (e) {
+      console.warn("Error while creating post-it: " + e.toString());
+    }
   });
 }
 
@@ -106,9 +118,9 @@ function applyPhotoFrames(svg, thickness) {
         throw 'Invalid clip for image: ' + image.href.baseVal
       }
     }
-    let image_transform = new DOMMatrix(image.getAttribute("transform"));
+    let image_transform = transformToMatrix(image);
     if (clip !== image) {
-      let clip_transform = new DOMMatrix(clip.getAttribute("transform"));
+      let clip_transform = transformToMatrix(clip);
       image_transform.multiplySelf(clip_transform);
     }
     let border = createFrame(image.id + "_frame", clip.x, clip.y, clip.width, clip.height, thickness);
